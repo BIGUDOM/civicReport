@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https:; img-src 'self' data: https: http://localhost:5000; connect-src 'self' ws: wss: http://localhost:5000 https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.socket.io;">
+    <title>CivicReport</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div id="toast-container" aria-live="polite"></div>
+
+        <section id="welcome-page" class="page active">
+            <div class="welcome-content">
+                <div class="logo-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <h1>CivicReport</h1>
+                <p class="tagline">Report incidents. Keep your community informed.</p>
+                <p class="description">A secure, real-time platform for citizens to report community incidents and stay updated on local safety.</p>
+                <div class="welcome-actions">
+                    <button id="btn-get-started" class="btn btn-primary">Get Started</button>
+                    <button id="btn-login-nav" class="btn btn-secondary">Login</button>
+                    <button id="btn-signup-nav" class="btn btn-outline">Create Account</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="signup-page" class="page">
+            <div class="page-header">
+                <button class="btn-back" aria-label="Go back">&larr;</button>
+                <h2>Create Account</h2>
+            </div>
+            <form id="signup-form" class="auth-form">
+                <div class="form-group">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" name="full_name" required autocomplete="name">
+                    <span class="error-msg" id="error-signup-name"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" name="email" required autocomplete="email">
+                    <span class="error-msg" id="error-signup-email"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signup-phone">Phone Number</label>
+                    <input type="tel" id="signup-phone" name="phone" required autocomplete="tel">
+                    <span class="error-msg" id="error-signup-phone"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <div class="password-input">
+                        <input type="password" id="signup-password" name="password" required minlength="6">
+                        <button type="button" class="toggle-password" aria-label="Toggle password visibility">👁️</button>
+                    </div>
+                    <span class="error-msg" id="error-signup-password"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <div class="password-input">
+                        <input type="password" id="signup-confirm-password" name="confirm_password" required minlength="6">
+                        <button type="button" class="toggle-password" aria-label="Toggle password visibility">👁️</button>
+                    </div>
+                    <span class="error-msg" id="error-signup-confirm"></span>
+                </div>
+                <button type="submit" id="btn-signup-submit" class="btn btn-primary btn-block">Create Account</button>
+                <p class="auth-link">Already have an account? <a href="#" id="link-to-login">Login</a></p>
+            </form>
+        </section>
+
+        <section id="login-page" class="page">
+            <div class="page-header">
+                <button class="btn-back" aria-label="Go back">&larr;</button>
+                <h2>Login</h2>
+            </div>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" name="email" required autocomplete="email">
+                    <span class="error-msg" id="error-login-email"></span>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="password-input">
+                        <input type="password" id="login-password" name="password" required>
+                        <button type="button" class="toggle-password" aria-label="Toggle password visibility">👁️</button>
+                    </div>
+                    <span class="error-msg" id="error-login-password"></span>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="login-remember" name="remember">
+                    <label for="login-remember">Remember Me</label>
+                </div>
+                <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block">Login</button>
+                <p class="auth-link">Don't have an account? <a href="#" id="link-to-signup">Create Account</a></p>
+            </form>
+        </section>
+
+        <section id="dashboard-page" class="page">
+            <div class="page-header">
+                <h2>Home</h2>
+                <div class="header-actions"><span id="user-greeting">Welcome</span></div>
+            </div>
+            <div class="dashboard-summary">
+                <button id="btn-report-incident" class="btn btn-primary btn-block"><span>+</span> Report Incident</button>
+            </div>
+            <div class="filter-section">
+                <label for="category-filter">Filter by Category:</label>
+                <select id="category-filter" class="form-control"><option value="all">All Categories</option></select>
+            </div>
+            <div id="incidents-list" class="incidents-list"><div class="loading-state">Loading incidents...</div></div>
+        </section>
+
+        <section id="report-page" class="page">
+            <div class="page-header">
+                <button class="btn-back" aria-label="Go back">&larr;</button>
+                <h2>Report Incident</h2>
+            </div>
+            <form id="report-form" class="report-form">
+                <div class="form-group">
+                    <label for="report-title">Incident Title</label>
+                    <input type="text" id="report-title" name="title" required maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="report-category">Category</label>
+                    <select id="report-category" name="category_id" required><option value="">Select a category</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="report-description">Description</label>
+                    <textarea id="report-description" name="description" rows="4" required maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <div class="location-controls">
+                        <button type="button" id="btn-use-location" class="btn btn-secondary btn-sm">Use My Location</button>
+                    </div>
+                    <input type="text" id="report-location-text" name="location_text" placeholder="Location name or address" required>
+                    <input type="hidden" id="report-lat" name="latitude">
+                    <input type="hidden" id="report-lng" name="longitude">
+                    <div id="location-status" class="location-status"></div>
+                </div>
+                <div class="form-group">
+                    <label for="report-image">Picture (Optional)</label>
+                    <div class="image-upload-area" id="image-upload-area">
+                        <input type="file" id="report-image" name="image" accept="image/jpeg,image/png,image/jpg">
+                        <div class="upload-placeholder"><span>📷 Tap to select image</span></div>
+                        <img id="image-preview" class="image-preview" alt="Preview">
+                        <button type="button" id="btn-remove-image" class="btn-remove-image hidden">✕</button>
+                    </div>
+                    <span class="error-msg" id="error-report-image"></span>
+                </div>
+                <button type="submit" id="btn-submit-report" class="btn btn-primary btn-block">Submit Report</button>
+            </form>
+        </section>
+
+        <section id="my-reports-page" class="page">
+            <div class="page-header"><h2>My Reports</h2></div>
+            <div id="my-reports-list" class="incidents-list"><div class="loading-state">Loading your reports...</div></div>
+        </section>
+
+        <section id="notifications-page" class="page">
+            <div class="page-header">
+                <h2>Notifications</h2>
+                <button id="btn-mark-all-read" class="btn btn-sm btn-outline">Mark all read</button>
+            </div>
+            <div id="notifications-list" class="notifications-list"><div class="loading-state">Loading notifications...</div></div>
+        </section>
+
+        <section id="profile-page" class="page">
+            <div class="page-header"><h2>Profile</h2></div>
+            <div class="profile-content">
+                <div class="profile-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <form id="profile-form">
+                    <div class="form-group">
+                        <label for="profile-name">Full Name</label>
+                        <input type="text" id="profile-name" name="full_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email">Email</label>
+                        <input type="email" id="profile-email" name="email" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-phone">Phone Number</label>
+                        <input type="tel" id="profile-phone" name="phone" required>
+                    </div>
+                    <button type="submit" id="btn-update-profile" class="btn btn-primary btn-block">Save Changes</button>
+                </form>
+                <button id="btn-logout" class="btn btn-danger btn-block" style="margin-top: 20px;">Logout</button>
+            </div>
+        </section>
+
+        <div id="incident-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-content">
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+                <img id="modal-image" class="modal-image" src="" alt="Incident image">
+                <h3 id="modal-title" class="modal-title"></h3>
+                <div class="modal-meta">
+                    <span id="modal-category" class="badge"></span>
+                    <span id="modal-date"></span>
+                </div>
+                <div class="modal-location"><strong>Location:</strong> <span id="modal-location"></span></div>
+                <div class="modal-coords"><small>Lat: <span id="modal-lat"></span>, Lng: <span id="modal-lng"></span></small></div>
+                <p id="modal-description" class="modal-description"></p>
+                <div class="modal-status"><strong>Status:</strong> <span id="modal-status"></span></div>
+                <div class="modal-reporter"><small>Reported by: <span id="modal-reporter"></span></small></div>
+            </div>
+        </div>
+
+        <nav id="bottom-nav" class="bottom-nav hidden">
+            <a href="#" data-page="dashboard-page" class="nav-item active"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+            <a href="#" data-page="my-reports-page" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Reports</span></a>
+            <a href="#" data-page="report-page" class="nav-item nav-item-add"><span class="nav-icon">➕</span><span class="nav-label">Add</span></a>
+            <a href="#" data-page="notifications-page" class="nav-item"><span class="nav-icon">🔔</span><span class="nav-label">Alerts</span><span id="nav-notification-badge" class="badge-notification hidden">0</span></a>
+            <a href="#" data-page="profile-page" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a>
+        </nav>
+    </div>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
